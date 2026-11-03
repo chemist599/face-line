@@ -534,7 +534,9 @@ function makeShareCard(){
     ctx.fillStyle=main.color; ctx.font="700 20px 'Noto Serif SC'"; ctx.textAlign="center"; ctx.fillText(main.seal,0,0); ctx.restore();
     ctx.strokeStyle="#DCD9D0"; ctx.beginPath(); ctx.moveTo(56,120); ctx.lineTo(694,120); ctx.stroke();
 
+    let settled=false;
     const drawContent=()=>{
+      if(settled)return; settled=true;
       ctx.fillStyle=main.color; ctx.font="900 52px 'Noto Serif SC'"; ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText(main.name,375,378);
       ctx.fillStyle="#5C635F"; ctx.font="24px 'Noto Sans SC'"; ctx.fillText(main.sub,375,420);
@@ -562,6 +564,7 @@ function makeShareCard(){
     };
     img.onerror=()=>drawContent();
     img.src=state.image;
+    setTimeout(()=>drawContent(),4000); // 兜底：即使图片事件异常，也保证 4 秒内生成卡片
   });
 }
 $("btnShare").onclick=async()=>{

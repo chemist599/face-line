@@ -1,0 +1,6 @@
+name = "face-line"
+main = "worker/worker.js"
+compatibility_date = "2026-11-03"
+
+[vars]
+MODEL = "glm-4.6v-flashx"
