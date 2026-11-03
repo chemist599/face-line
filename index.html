@@ -62,6 +62,8 @@ body{
 .step-line.done .dot{background:var(--seal);border-color:var(--seal);}
 .spin{animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+.wait-hint{display:none;color:var(--soft);font-size:12.5px;margin:20px auto 0;max-width:340px;text-align:center;}
+.wait-hint.show{display:block;}
 
 /* 结果档案 */
 .report{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:14px;}
@@ -160,6 +162,7 @@ body{
         <div class="step-line"><span class="dot"></span>比对八种脸系血统</div>
         <div class="step-line"><span class="dot"></span>生成气质评分与美学档案</div>
       </div>
+      <p class="wait-hint" id="waitHint">分析较复杂，正在精修你的专属美学档案，请稍候…</p>
     </div>
   </section>
 
@@ -325,6 +328,7 @@ function resetSteps(){
 function startAnalysis(){
   showView("view-loading");
   resetSteps();
+  $("waitHint").classList.remove("show");
   const lines=$("stepList").querySelectorAll(".step-line");
   let i=0;
   const tick=()=>{
@@ -336,14 +340,19 @@ function startAnalysis(){
     if(i<lines.length){
       lines[i].classList.add("doing");
       lines[i].querySelector(".dot").innerHTML='<svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C0452F" stroke-width="3"><path d="M12 3a9 9 0 1 0 9 9"/></svg>';
-      i++; setTimeout(tick, i===lines.length?900:1100);
+      i++;
+      if(i<lines.length){ setTimeout(tick,1100); } // 最后一步保持转圈，直到请求真正返回
     }
   };
   tick();
+  const waitTimer=setTimeout(()=>$("waitHint").classList.add("show"),10000);
+  const finishWait=()=>{ clearTimeout(waitTimer); $("waitHint").classList.remove("show"); };
   callWorker().then(()=>{
+    finishWait();
     lines.forEach(el=>{ if(!el.classList.contains("done")){ el.classList.add("done"); el.querySelector(".dot").innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>'; }});
     setTimeout(()=>renderResult(),500);
   }).catch(err=>{
+    finishWait();
     toast(err.message||"分析失败，请稍后再试");
     setTimeout(()=>showView("view-home"),800);
   });
@@ -377,13 +386,19 @@ async function callWorker(){
   const url=getWorker();
   if(!url){ throw new Error("请先在右上角设置分析服务地址"); }
   let resp;
+  const controller=new AbortController();
+  const timeoutId=setTimeout(()=>controller.abort(),30000);
   try{
     resp=await fetch(url,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({image:state.image, prompt:buildPrompt()})
+      body:JSON.stringify({image:state.image, prompt:buildPrompt()}),
+      signal:controller.signal
     });
-  }catch(e){ throw new Error("无法连接分析服务"); }
+  }catch(e){
+    throw new Error(e.name==="AbortError"?"分析超时（30 秒），请稍后重试":"无法连接分析服务");
+  }
+  clearTimeout(timeoutId);
   if(!resp.ok){ throw new Error("服务繁忙（"+resp.status+"），请稍后再试"); }
   const data=await resp.json();
   let content=data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
