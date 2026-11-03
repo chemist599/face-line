@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>脸系血统鉴定 · AI 面部美学档案</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23C0452F'/%3E%3Cpath d='M9 13c0-2 1.4-3 3-3s3 1 3 3-1.3 3-3 3-3-1-3-3zm8 0c0-2 1.4-3 3-3s3 1 3 3-1.3 3-3 3-3-1-3-3zM11 20c0-1.7 2.2-3 5-3s5 1.3 5 3-2.2 2.6-5 2.6-5-1-5-2.6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+:root{
+  --paper:#F5F4F0; --card:#FFFFFF; --ink:#1E2422; --soft:#5C635F;
+  --line:#DCD9D0; --seal:#C0452F; --seal-soft:#F3E4DF;
+  --cat:#6B7A90; --dog:#C99A3F; --fox:#D96A3F; --deer:#5E8B6E;
+  --rabbit:#D98AA0; --snake:#4F8A8B; --leopard:#A85C3A; --sheep:#B09A6F;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.65; min-height:100vh;
+}
+.serif{font-family:"Noto Serif SC","Songti SC",serif;}
+.wrap{max-width:680px;margin:0 auto;padding:0 20px 60px;}
+.view{display:none;}.view.active{display:block;}
+
+/* 顶栏 */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 6px;}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:var(--seal);display:flex;align-items:center;justify-content:center;flex:none;}
+.brand b{font-family:"Noto Serif SC",serif;font-size:17px;font-weight:700;letter-spacing:.5px;}
+.icon-btn{border:1px solid var(--line);background:var(--card);border-radius:9px;width:44px;height:44px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+/* 首页 */
+.hero{text-align:center;padding:34px 0 22px;}
+.hero h1{font-family:"Noto Serif SC",serif;font-size:34px;font-weight:900;margin:0 0 12px;letter-spacing:2px;}
+.hero p{color:var(--soft);margin:0 auto;max-width:420px;font-size:14px;}
+.upload-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:8px;}
+#dropZone{border:1.5px dashed #B9B5AA;border-radius:12px;padding:46px 20px;text-align:center;cursor:pointer;transition:.2s;background:#FCFBF8;}
+#dropZone.drag{border-color:var(--seal);background:var(--seal-soft);}
+#dropZone svg{margin-bottom:10px;}
+#dropZone .t{font-weight:500;font-size:16px;}
+#dropZone .s{color:var(--soft);font-size:12.5px;margin-top:5px;}
+.btn-row{display:flex;gap:10px;margin-top:14px;}
+.btn{flex:1;border:none;border-radius:10px;padding:13px 10px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+.types{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:22px;}
+.types span{font-size:12px;color:var(--soft);background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;}
+.types i{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+.notice{text-align:center;color:var(--soft);font-size:12px;margin-top:18px;}
+
+/* 分析中 */
+.loading-box{text-align:center;padding:30px 0 10px;}
+.preview{width:170px;height:170px;object-fit:cover;border-radius:16px;border:1px solid var(--line);margin:0 auto 26px;display:block;}
+.steps{text-align:left;max-width:340px;margin:0 auto;}
+.step-line{display:flex;align-items:center;gap:12px;padding:9px 0;color:var(--soft);font-size:14px;}
+.step-line .dot{width:22px;height:22px;border-radius:50%;border:1.5px solid #C4C0B6;display:flex;align-items:center;justify-content:center;flex:none;}
+.step-line.doing{color:var(--ink);}
+.step-line.doing .dot{border-color:var(--seal);}
+.step-line.done{color:var(--ink);}
+.step-line.done .dot{background:var(--seal);border-color:var(--seal);}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 结果档案 */
+.report{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:14px;}
+.report-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#FCFBF8;}
+.report-head .no{font-size:11.5px;color:var(--soft);letter-spacing:1px;}
+.report-body{padding:22px 20px;}
+.r-hero{display:flex;gap:18px;align-items:center;position:relative;}
+.r-hero img{width:118px;height:118px;object-fit:cover;border-radius:14px;flex:none;border:1px solid var(--line);}
+.r-name .kicker{font-size:12px;color:var(--soft);letter-spacing:2px;}
+.r-name h2{font-family:"Noto Serif SC",serif;font-size:27px;font-weight:900;margin:3px 0 2px;letter-spacing:1px;}
+.r-name .sub{font-size:13px;color:var(--soft);}
+.seal{position:absolute;right:-4px;top:-6px;width:64px;height:64px;border-radius:50%;border:2.5px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;text-align:center;font-family:"Noto Serif SC",serif;font-weight:700;font-size:12px;line-height:1.15;transform:rotate(-12deg);background:rgba(255,255,255,.75);}
+.block{margin-top:24px;}
+.block h3{font-size:13px;letter-spacing:2px;color:var(--soft);margin:0 0 12px;font-weight:500;display:flex;align-items:center;gap:9px;}
+.block h3::after{content:"";flex:1;height:1px;background:var(--line);}
+/* 血统条 */
+.blood{margin-bottom:11px;}
+.blood .lab{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px;}
+.blood .bar{height:9px;background:#EDEAE2;border-radius:99px;overflow:hidden;}
+.blood .fill{height:100%;border-radius:99px;}
+.quote{font-family:"Noto Serif SC",serif;font-size:18px;font-weight:600;line-height:1.6;text-align:center;padding:6px 4px;}
+#radar{display:block;margin:0 auto;max-width:100%;}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.feat{background:#FCFBF8;border:1px solid var(--line);border-radius:10px;padding:11px 13px;}
+.feat .k{font-size:11.5px;color:var(--soft);}
+.feat .v{font-size:13.5px;margin-top:2px;}
+.charm p{margin:0 0 10px;font-size:14px;}
+.tips .tip{display:flex;gap:10px;font-size:13.5px;margin-bottom:9px;}
+.tips .tip b{flex:none;color:var(--seal);font-weight:600;}
+.actions{display:flex;gap:10px;margin-top:20px;}
+.actions .btn{flex:1;}
+
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(30,36,34,.45);display:none;align-items:center;justify-content:center;padding:24px;z-index:50;}
+.modal-mask.show{display:flex;}
+.modal{background:#fff;border-radius:16px;padding:22px;max-width:420px;width:100%;}
+.modal h3{margin:0 0 14px;font-family:"Noto Serif SC",serif;font-size:19px;}
+.modal label{font-size:13px;color:var(--soft);display:block;margin-bottom:6px;}
+.modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;margin-bottom:16px;}
+.modal .mbtn{display:flex;gap:10px;}
+#shareImg{width:100%;border-radius:12px;border:1px solid var(--line);}
+.toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:80;}
+.toast.show{opacity:1;}
+@media(max-width:480px){
+  .hero h1{font-size:29px;}
+  .r-hero{flex-wrap:wrap;}
+  .seal{right:0;}
+  .feat-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 视图：首页上传 ===== -->
+  <section id="view-home" class="view active">
+    <div class="topbar">
+      <div class="brand">
+        <span class="mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M7 10c0-1.6 1.2-2.8 2.7-2.8s2.7 1.2 2.7 2.8-1.2 2.8-2.7 2.8S7 11.6 7 10zm7.6 0c0-1.6 1.2-2.8 2.7-2.8S20 8.4 20 10s-1.2 2.8-2.7 2.8-2.7-1.2-2.7-2.8zM8.5 16.5c0-1.5 1.6-2.6 3.5-2.6s3.5 1.1 3.5 2.6-1.6 2.4-3.5 2.4-3.5-.9-3.5-2.4z" fill="#fff"/></svg>
+        </span>
+        <b>脸系图鉴</b>
+      </div>
+      <button class="icon-btn" id="btnSetting" aria-label="设置">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E2422" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="hero">
+      <h1>脸系血统鉴定</h1>
+      <p>上传一张正面照，AI 从五官轮廓到气质氛围，鉴定你属于哪一种动物系长相，并生成专属美学档案。</p>
+    </div>
+    <div class="upload-card">
+      <div id="dropZone">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#5C635F" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div class="t">点击或拖拽照片到此处</div>
+        <div class="s">建议正面、光线清晰的单人照</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnPick">从相册选择</button>
+        <button class="btn btn-ghost" id="btnCamera">拍照</button>
+      </div>
+    </div>
+    <div class="types" id="typeList"></div>
+    <p class="notice">照片仅用于本次分析，不会被服务器存储</p>
+    <input type="file" id="fileInput" accept="image/*" hidden>
+    <input type="file" id="cameraInput" accept="image/*" capture="user" hidden>
+  </section>
+
+  <!-- ===== 视图：分析中 ===== -->
+  <section id="view-loading" class="view">
+    <div class="loading-box">
+      <img class="preview" id="loadingPreview" alt="预览">
+      <div class="steps" id="stepList">
+        <div class="step-line"><span class="dot"></span>识别面部轮廓与五官位置</div>
+        <div class="step-line"><span class="dot"></span>分析脸型、眼型与量感</div>
+        <div class="step-line"><span class="dot"></span>比对八种脸系血统</div>
+        <div class="step-line"><span class="dot"></span>生成气质评分与美学档案</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 视图：结果档案 ===== -->
+  <section id="view-result" class="view">
+    <div class="report">
+      <div class="report-head">
+        <span class="no serif">FACE LINE REPORT · <span id="reportNo"></span></span>
+        <span class="no" id="reportDate"></span>
+      </div>
+      <div class="report-body">
+        <div class="r-hero">
+          <img id="resultImg" alt="鉴定照片">
+          <div class="r-name">
+            <div class="kicker">你的主脸系</div>
+            <h2 id="mainName"></h2>
+            <div class="sub" id="mainSub"></div>
+          </div>
+          <div class="seal" id="mainSeal">鉴定<br>认证</div>
+        </div>
+
+        <div class="block">
+          <h3>血统成分</h3>
+          <div id="bloodBox"></div>
+        </div>
+
+        <div class="block">
+          <h3>总评</h3>
+          <div class="quote" id="quoteText"></div>
+        </div>
+
+        <div class="block">
+          <h3>气质雷达</h3>
+          <canvas id="radar" width="340" height="300"></canvas>
+        </div>
+
+        <div class="block">
+          <h3>五官解析</h3>
+          <div class="feat-grid" id="featBox"></div>
+        </div>
+
+        <div class="block charm">
+          <h3>你的魅力</h3>
+          <div id="charmBox"></div>
+        </div>
+
+        <div class="block tips">
+          <h3>专属美学建议</h3>
+          <div id="tipsBox"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btnShare">生成分享卡</button>
+          <button class="btn btn-ghost" id="btnRetry">重新测试</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-mask" id="settingModal">
+  <div class="modal">
+    <h3>网关设置</h3>
+    <label>分析服务地址（Cloudflare Worker）</label>
+    <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev">
+    <div class="mbtn">
+      <button class="btn btn-ghost" id="btnCancelSet">取消</button>
+      <button class="btn btn-primary" id="btnSaveSet">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分享卡弹窗 -->
+<div class="modal-mask" id="shareModal">
+  <div class="modal" style="max-width:380px;">
+    <h3>你的分享卡</h3>
+    <img id="shareImg" alt="分享卡">
+    <div class="mbtn" style="margin-top:16px;">
+      <button class="btn btn-ghost" id="btnCloseShare">关闭</button>
+      <button class="btn btn-primary" id="btnDownload">下载图片</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ============ 基础配置：8 种脸系 ============ */
+const TYPES = {
+  cat:     {name:"猫系", en:"Cat",     sub:"清冷慵懒的高级脸", color:"#6B7A90", seal:"猫系"},
+  dog:     {name:"犬系", en:"Dog",     sub:"治愈亲和的初恋脸", color:"#C99A3F", seal:"犬系"},
+  fox:     {name:"狐系", en:"Fox",     sub:"又美又飒的钓系",   color:"#D96A3F", seal:"狐系"},
+  deer:    {name:"鹿系", en:"Deer",    sub:"灵动清纯的精灵",   color:"#5E8B6E", seal:"鹿系"},
+  rabbit:  {name:"兔系", en:"Rabbit",  sub:"甜度超标的软妹",   color:"#D98AA0", seal:"兔系"},
+  snake:   {name:"蛇系", en:"Snake",   sub:"危险迷人的冷艳",   color:"#4F8A8B", seal:"蛇系"},
+  leopard: {name:"豹系", en:"Leopard", sub:"气场全开的大女主", color:"#A85C3A", seal:"豹系"},
+  sheep:   {name:"绵羊系", en:"Sheep", sub:"温柔耐看的邻家",   color:"#B09A6F", seal:"绵羊系"}
+};
+const DIMENSIONS = [
+  {key:"approachability", name:"亲和度"},
+  {key:"coolness",        name:"清冷感"},
+  {key:"allure",          name:"妩媚感"},
+  {key:"youthfulness",    name:"幼态感"},
+  {key:"dimension",       name:"立体感"},
+  {key:"vitality",        name:"元气感"}
+];
+const DEFAULT_WORKER = ""; // 部署 Worker 后回填，也可在页面“网关设置”里临时配置
+const state = {image:null, result:null};
+
+/* ============ 工具函数 ============ */
+const $ = id => document.getElementById(id);
+function showView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  $(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+let toastTimer;
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+function getWorker(){
+  return localStorage.getItem("fl_worker") || DEFAULT_WORKER;
+}
+
+/* 读取并压缩图片，返回 dataURL，控制 base64 体积 */
+function readAndCompress(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1000;
+        let {width:w,height:h}=img;
+        if(w>max||h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+        const c=document.createElement("canvas"); c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(c.toDataURL("image/jpeg",0.85));
+      };
+      img.onerror=reject; img.src=fr.result;
+    };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+
+async function handleFile(file){
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ toast("请选择图片文件"); return; }
+  try{
+    state.image=await readAndCompress(file);
+    $("loadingPreview").src=state.image;
+    startAnalysis();
+  }catch(e){ toast("图片读取失败，请换一张"); }
+}
+
+/* ============ 分析流程 ============ */
+function resetSteps(){
+  $("stepList").querySelectorAll(".step-line").forEach(el=>{
+    el.classList.remove("doing","done");
+    el.querySelector(".dot").innerHTML="";
+  });
+}
+function startAnalysis(){
+  showView("view-loading");
+  resetSteps();
+  const lines=$("stepList").querySelectorAll(".step-line");
+  let i=0;
+  const tick=()=>{
+    if(i>0){
+      lines[i-1].classList.remove("doing");
+      lines[i-1].classList.add("done");
+      lines[i-1].querySelector(".dot").innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>';
+    }
+    if(i<lines.length){
+      lines[i].classList.add("doing");
+      lines[i].querySelector(".dot").innerHTML='<svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C0452F" stroke-width="3"><path d="M12 3a9 9 0 1 0 9 9"/></svg>';
+      i++; setTimeout(tick, i===lines.length?900:1100);
+    }
+  };
+  tick();
+  callWorker().then(()=>{
+    lines.forEach(el=>{ if(!el.classList.contains("done")){ el.classList.add("done"); el.querySelector(".dot").innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>'; }});
+    setTimeout(()=>renderResult(),500);
+  }).catch(err=>{
+    toast(err.message||"分析失败，请稍后再试");
+    setTimeout(()=>showView("view-home"),800);
+  });
+}
+
+function buildPrompt(){
+  return [
+    "你是资深面部美学分析师，擅长“动物系长相”鉴定。请分析这张人脸照片，从 8 种脸系中判定主血统与副血统，并完成美学档案。",
+    "8 种脸系及判定要点：",
+    "cat 猫系：眼尾上扬、眼型偏长、鼻小巧、轮廓利落、下颌清晰，清冷慵懒高级；",
+    "dog 犬系：圆眼或下垂眼、鼻头圆润、唇饱满、脸型圆润有笑感，治愈亲和元气；",
+    "fox 狐系：细长眼、眼尾明显上扬、尖下巴、高鼻梁、五官锐利，妩媚明艳聪明；",
+    "deer 鹿系：大眼睛、眼距略宽、长睫毛、鹅蛋脸、眼神清澈，清纯灵动仙气；",
+    "rabbit 兔系：圆眼、小巧圆脸、饱满唇、皮肤白皙、幼态，软萌甜美无辜；",
+    "snake 蛇系：窄长脸、细长眼、高鼻梁、尖下巴、五官集中，冷艳危险魅惑；",
+    "leopard 豹系：浓颜、高眉骨、厚唇、轮廓有力、健康肤色、量感大，野性力量御姐；",
+    "sheep 绵羊系：圆脸、柔和圆钝轮廓、淡眉、饱满脸颊、温柔眼，温婉知性舒服。",
+    "要求：",
+    "1. 严格只输出 JSON，不要任何解释或 markdown 代码块；",
+    "2. mainType 为主脸系 id，subType 为副脸系 id（不可与主脸系相同），mainPercent 与 subPercent 之和为 100，主系占比 55 到 85；",
+    "3. 六个维度分数为 0 到 100：approachability 亲和度、coolness 清冷感、allure 妩媚感、youthfulness 幼态感、dimension 立体感、vitality 元气感，分数须与脸系特征一致；",
+    "4. features 各项用中文短句具体描述，density 为浓颜系或淡颜系，tone 为冷调、暖调或中性；",
+    "5. charm 为 2 条正向魅力描述；beautyTips 给出具体可执行的妆容 makeup、色彩 colors、风格 style 建议；",
+    "6. headline 为 10 到 18 字金句，quote 为一句可当签名的话；",
+    "7. 全程正向，不出现任何负面或攻击性评价；照片不清晰也给出最接近的正向结果。",
+    "输出 JSON 字段：mainType,mainPercent,subType,subPercent,headline,quote,scores{approachability,coolness,allure,youthfulness,dimension,vitality},features{faceShape,eyeShape,nose,lips,density,tone},charm[string],beautyTips{makeup,colors,style}"
+  ].join("\n");
+}
+
+async function callWorker(){
+  const url=getWorker();
+  if(!url){ throw new Error("请先在右上角设置分析服务地址"); }
+  let resp;
+  try{
+    resp=await fetch(url,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({image:state.image, prompt:buildPrompt()})
+    });
+  }catch(e){ throw new Error("无法连接分析服务"); }
+  if(!resp.ok){ throw new Error("服务繁忙（"+resp.status+"），请稍后再试"); }
+  const data=await resp.json();
+  let content=data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if(!content){ throw new Error("返回内容异常，请重试"); }
+  content=content.replace(/```json|```/g,"").trim();
+  try{ state.result=JSON.parse(content); }
+  catch(e){ throw new Error("结果解析失败，请重试"); }
+  if(!TYPES[state.result.mainType]){ throw new Error("脸系结果异常，请重试"); }
+  if(!TYPES[state.result.subType]){ state.result.subType=Object.keys(TYPES).find(k=>k!==state.result.mainType); state.result.subPercent=100-(state.result.mainPercent||70); }
+}
+
+/* ============ 结果渲染 ============ */
+function renderResult(){
+  const r=state.result, main=TYPES[r.mainType], sub=TYPES[r.subType];
+  $("reportNo").textContent=Math.random().toString(36).slice(2,8).toUpperCase();
+  const d=new Date();
+  $("reportDate").textContent=d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0");
+  $("resultImg").src=state.image;
+  $("mainName").textContent=main.name;
+  $("mainSub").textContent=main.sub;
+  const seal=$("mainSeal"); seal.textContent=main.seal; seal.style.color=main.color; seal.style.borderColor=main.color;
+  $("quoteText").textContent=r.headline||main.sub;
+
+  const mp=Math.max(55,Math.min(85,r.mainPercent||70));
+  $("bloodBox").innerHTML=[
+    {t:main,p:mp,c:main.color},
+    {t:sub,p:100-mp,c:sub.color}
+  ].map(b=>'<div class="blood"><div class="lab"><span>'+b.t.name+' · '+b.t.en+'</span><span>'+b.p+'%</span></div><div class="bar"><div class="fill" style="width:'+b.p+'%;background:'+b.c+'"></div></div></div>').join("");
+
+  drawRadar(r.scores,main.color);
+
+  const f=r.features||{};
+  const featItems=[
+    ["脸型",f.faceShape],["眼型",f.eyeShape],["鼻型",f.nose],
+    ["唇形",f.lips],["量感",f.density],["基调",f.tone]
+  ];
+  $("featBox").innerHTML=featItems.map(it=>'<div class="feat"><div class="k">'+it[0]+'</div><div class="v">'+(it[1]||"—")+'</div></div>').join("");
+
+  $("charmBox").innerHTML=(Array.isArray(r.charm)?r.charm:[]).map(c=>'<p>'+c+'</p>').join("") || '<p>'+main.sub+'，自带让人移不开眼的魅力。</p>';
+
+  const tips=r.beautyTips||{};
+  const tipItems=[["妆容",tips.makeup],["色彩",tips.colors],["风格",tips.style]];
+  $("tipsBox").innerHTML=tipItems.filter(t=>t[1]).map(t=>'<div class="tip"><b>'+t[0]+'</b><span>'+t[1]+'</span></div>').join("");
+
+  showView("view-result");
+}
+
+/* 雷达图（DPR 适配，保证清晰） */
+function drawRadar(scores,color){
+  const cv=$("radar"), W=340,H=300, dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width="100%"; cv.style.maxWidth=W+"px";
+  const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+  const cx=W/2, cy=H/2+6, R=92, N=DIMENSIONS.length;
+  const pos=(i,ratio)=>{
+    const a=-Math.PI/2+i*2*Math.PI/N;
+    return [cx+R*ratio*Math.cos(a), cy+R*ratio*Math.sin(a)];
+  };
+  ctx.strokeStyle="#E2DFD7"; ctx.fillStyle="#5C635F"; ctx.font="12px 'Noto Sans SC'"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  [0.25,0.5,0.75,1].forEach(ratio=>{
+    ctx.beginPath();
+    for(let i=0;i<N;i++){ const p=pos(i,ratio); i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); }
+    ctx.closePath(); ctx.stroke();
+  });
+  for(let i=0;i<N;i++){
+    const a=-Math.PI/2+i*2*Math.PI/N;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a)); ctx.stroke();
+    const lx=cx+(R+22)*Math.cos(a), ly=cy+(R+18)*Math.sin(a);
+    ctx.fillText(DIMENSIONS[i].name,lx,ly);
+  }
+  ctx.beginPath();
+  DIMENSIONS.forEach((dim,i)=>{
+    const v=Math.max(0,Math.min(100,(scores&&scores[dim.key])||50))/100;
+    const p=pos(i,v); i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);
+  });
+  ctx.closePath();
+  ctx.fillStyle=color+"33"; ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle=color; ctx.stroke();
+  DIMENSIONS.forEach((dim,i)=>{
+    const v=Math.max(0,Math.min(100,(scores&&scores[dim.key])||50))/100;
+    const p=pos(i,v);
+    ctx.beginPath(); ctx.arc(p[0],p[1],3.2,0,7); ctx.fillStyle=color; ctx.fill();
+  });
+}
+
+/* ============ 首页脸系标签 ============ */
+$("typeList").innerHTML=Object.keys(TYPES).map(k=>{
+  return '<span><i style="background:'+TYPES[k].color+'"></i>'+TYPES[k].name+'</span>';
+}).join("");
+
+/* ============ 事件绑定 ============ */
+$("btnSetting").onclick=()=>{ $("workerUrl").value=getWorker(); $("settingModal").classList.add("show"); };
+$("btnCancelSet").onclick=()=>$("settingModal").classList.remove("show");
+$("btnSaveSet").onclick=()=>{
+  const v=$("workerUrl").value.trim();
+  if(v) localStorage.setItem("fl_worker",v); else localStorage.removeItem("fl_worker");
+  $("settingModal").classList.remove("show"); toast("已保存");
+};
+$("btnPick").onclick=()=>$("fileInput").click();
+$("dropZone").onclick=()=>$("fileInput").click();
+$("btnCamera").onclick=()=>$("cameraInput").click();
+$("fileInput").onchange=e=>handleFile(e.target.files[0]);
+$("cameraInput").onchange=e=>handleFile(e.target.files[0]);
+["dragover","dragenter"].forEach(ev=>$("dropZone").addEventListener(ev,e=>{e.preventDefault();$("dropZone").classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>$("dropZone").addEventListener(ev,e=>{e.preventDefault();$("dropZone").classList.remove("drag");}));
+$("dropZone").addEventListener("drop",e=>handleFile(e.dataTransfer.files[0]));
+$("btnRetry").onclick=()=>{ $("fileInput").value=""; $("cameraInput").value=""; showView("view-home"); };
+
+/* ============ 分享卡（Canvas 竖版 3:4） ============ */
+function wrapText(ctx,text,cx,y,maxWidth,lh){
+  let line=""; const lines=[];
+  for(const ch of text){
+    if(ctx.measureText(line+ch).width>maxWidth){ lines.push(line); line=ch; }
+    else line+=ch;
+  }
+  lines.push(line);
+  const start=y-(lines.length-1)*lh/2;
+  lines.forEach((l,i)=>ctx.fillText(l,cx,start+i*lh));
+}
+function drawMiniBar(ctx,y,type,pct){
+  ctx.textAlign="right"; ctx.textBaseline="middle"; ctx.fillStyle="#1E2422"; ctx.font="20px 'Noto Sans SC'";
+  ctx.fillText(type.name,290,y);
+  ctx.fillStyle="#EDEAE2"; ctx.fillRect(310,y-5,250,10);
+  ctx.fillStyle=type.color; ctx.fillRect(310,y-5,250*pct/100,10);
+  ctx.textAlign="left"; ctx.fillStyle="#5C635F"; ctx.fillText(pct+"%",572,y);
+}
+function drawCardRadar(ctx,cx,cy,R,scores,color){
+  const N=DIMENSIONS.length;
+  const pos=(i,ratio)=>{const a=-Math.PI/2+i*2*Math.PI/N;return [cx+R*ratio*Math.cos(a),cy+R*ratio*Math.sin(a)];};
+  ctx.strokeStyle="#E2DFD7"; ctx.lineWidth=1;
+  [0.33,0.66,1].forEach(ratio=>{ctx.beginPath();for(let i=0;i<N;i++){const p=pos(i,ratio);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}ctx.closePath();ctx.stroke();});
+  ctx.beginPath();
+  DIMENSIONS.forEach((dim,i)=>{const v=Math.max(0,Math.min(100,(scores&&scores[dim.key])||50))/100;const p=pos(i,v);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});
+  ctx.closePath(); ctx.fillStyle=color+"33"; ctx.fill();
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+}
+function makeShareCard(){
+  return new Promise(async(resolve,reject)=>{
+    await document.fonts.ready;
+    const W=750,H=1000,cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+    const ctx=cv.getContext("2d"), r=state.result, main=TYPES[r.mainType];
+    ctx.fillStyle="#F5F4F0"; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle="#DCD9D0"; ctx.lineWidth=2; ctx.strokeRect(24,24,W-48,H-48);
+    ctx.fillStyle="#1E2422"; ctx.font="700 30px 'Noto Serif SC'"; ctx.textAlign="left"; ctx.textBaseline="middle";
+    ctx.fillText("脸系血统鉴定",56,68);
+    ctx.fillStyle="#5C635F"; ctx.font="18px 'Noto Sans SC'"; ctx.fillText("FACE LINE REPORT",56,100);
+    ctx.save(); ctx.translate(694,68); ctx.rotate(-12*Math.PI/180);
+    ctx.strokeStyle=main.color; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,30,0,7); ctx.stroke();
+    ctx.fillStyle=main.color; ctx.font="700 20px 'Noto Serif SC'"; ctx.textAlign="center"; ctx.fillText(main.seal,0,0); ctx.restore();
+    ctx.strokeStyle="#DCD9D0"; ctx.beginPath(); ctx.moveTo(56,120); ctx.lineTo(694,120); ctx.stroke();
+
+    const drawContent=()=>{
+      ctx.fillStyle=main.color; ctx.font="900 52px 'Noto Serif SC'"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(main.name,375,378);
+      ctx.fillStyle="#5C635F"; ctx.font="24px 'Noto Sans SC'"; ctx.fillText(main.sub,375,420);
+      const mp=Math.max(55,Math.min(85,r.mainPercent||70));
+      drawMiniBar(ctx,470,main,mp);
+      drawMiniBar(ctx,508,TYPES[r.subType],100-mp);
+      ctx.fillStyle="#1E2422"; ctx.font="600 27px 'Noto Serif SC'";
+      wrapText(ctx,r.quote||r.headline||main.sub,375,580,560,36);
+      drawCardRadar(ctx,375,735,92,r.scores,main.color);
+      ctx.fillStyle="#C0452F"; ctx.font="700 26px 'Noto Sans SC'";
+      ctx.fillText("我是"+main.name+"，你是什么系？",375,898);
+      ctx.fillStyle="#5C635F"; ctx.font="21px 'Noto Sans SC'";
+      const host=window.location.host;
+      ctx.fillText(host?("来测 → "+host):"搜索：脸系血统鉴定",375,938);
+      resolve(cv.toDataURL("image/png"));
+    };
+    const img=new Image();
+    img.onload=()=>{
+      const cx=375,cy=235,rad=98;
+      ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,rad,0,7); ctx.clip();
+      const scale=Math.max(rad*2/img.width,rad*2/img.height), dw=img.width*scale, dh=img.height*scale;
+      ctx.drawImage(img,cx-dw/2,cy-dh/2,dw,dh); ctx.restore();
+      ctx.strokeStyle="#fff"; ctx.lineWidth=4; ctx.beginPath(); ctx.arc(cx,cy,rad,0,7); ctx.stroke();
+      drawContent();
+    };
+    img.onerror=()=>drawContent();
+    img.src=state.image;
+  });
+}
+$("btnShare").onclick=async()=>{
+  try{ $("shareImg").src=await makeShareCard(); $("shareModal").classList.add("show"); }
+  catch(e){ toast("分享卡生成失败，请重试"); }
+};
+$("btnCloseShare").onclick=()=>$("shareModal").classList.remove("show");
+$("btnDownload").onclick=()=>{
+  const a=document.createElement("a"); a.href=$("shareImg").src; a.download="脸系血统鉴定.png"; a.click();
+  toast("已开始下载");
+};
+</script>
+</body>
+</html>
